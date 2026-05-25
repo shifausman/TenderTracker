@@ -1,0 +1,592 @@
+# Technical Requirements Document (TRD)
+
+## TenderTracker — Production-Grade Procurement Intelligence Platform ⚙️
+
+---
+
+# 1. Technical Overview
+
+## Technical Summary
+
+TenderTracker is a cloud-native procurement intelligence platform designed to aggregate, process, index, and expose government tender data through scalable APIs and analytics interfaces.
+
+The system continuously collects tender data from multiple government procurement portals using automated scraping pipelines, processes the data through ETL workflows, stores normalized records in a relational datastore, indexes searchable content, and exposes filtered insights through backend APIs and a web application.
+
+---
+
+## Engineering Purpose
+
+From an engineering perspective, the platform is designed to:
+
+* Automate large-scale public procurement data collection
+* Build reliable ETL processing pipelines
+* Provide low-latency search and filtering
+* Support scalable analytics workloads
+* Enable multi-source tender aggregation
+* Maintain high system reliability under continuous ingestion workloads
+
+---
+
+## High-Level Architecture
+
+```text id="z2v31m"
+Government Portals
+        ↓
+Distributed Scraper Workers
+        ↓
+Scheduler & Queue System
+        ↓
+ETL Processing Pipeline
+        ↓
+PostgreSQL Database
+        ↓
+Search Indexing Layer
+        ↓
+FastAPI Backend Services
+        ↓
+React/Next.js Frontend
+```
+
+---
+
+## Core Engineering Objectives
+
+| Objective       | Description                                           |
+| --------------- | ----------------------------------------------------- |
+| Scalability     | Support increasing tender volume and concurrent users |
+| Reliability     | Ensure continuous ingestion pipelines                 |
+| Maintainability | Modular service boundaries and clean architecture     |
+| Performance     | Fast search and API response times                    |
+| Extensibility   | Support future integrations and analytics modules     |
+| Security        | Production-grade authentication and API protection    |
+
+---
+
+# 2. System Architecture
+
+## Architecture Style
+
+### Recommended Architecture:
+
+**Modular Monolith transitioning toward Service-Oriented Architecture**
+
+Initial production versions should maintain a modular monolith for operational simplicity while preserving clear service boundaries for future decomposition.
+
+---
+
+## Major Components
+
+| Component            | Responsibility                |
+| -------------------- | ----------------------------- |
+| Scraper Engine       | Collect tender data           |
+| Scheduler Layer      | Trigger automated jobs        |
+| ETL Pipeline         | Normalize and process records |
+| Database Layer       | Persist structured data       |
+| Search Layer         | Full-text indexing            |
+| Backend API Layer    | Expose APIs                   |
+| Frontend Application | User interaction              |
+| Analytics Engine     | Aggregations and metrics      |
+| Monitoring Stack     | Operational visibility        |
+
+---
+
+## Service Boundaries
+
+| Service            | Scope                                 |
+| ------------------ | ------------------------------------- |
+| Scraper Service    | Portal scraping & ingestion           |
+| Processing Service | ETL transformations                   |
+| API Service        | API orchestration                     |
+| Search Service     | Search indexing/querying              |
+| Analytics Service  | Reporting and metrics                 |
+| Auth Service       | Authentication and session management |
+
+---
+
+## Internal Communication
+
+| Pattern                | Usage                        |
+| ---------------------- | ---------------------------- |
+| REST APIs              | Frontend ↔ Backend           |
+| Redis Queue            | Background task distribution |
+| Internal Service Calls | Module communication         |
+| Async Workers          | Long-running tasks           |
+
+---
+
+## External Integrations
+
+| Integration                    | Purpose              |
+| ------------------------------ | -------------------- |
+| Government Procurement Portals | Tender ingestion     |
+| Supabase Auth                  | Authentication       |
+| Email Provider                 | System notifications |
+| Elasticsearch                  | Search indexing      |
+
+---
+
+# 3. Technology Stack
+
+# Frontend
+
+| Technology      | Purpose              | Reasoning                      |
+| --------------- | -------------------- | ------------------------------ |
+| React + Next.js | Web frontend         | Scalable production UI         |
+| TailwindCSS     | Styling              | Rapid UI consistency           |
+| React Query     | API state management | Efficient server-state caching |
+| TypeScript      | Type safety          | Maintainability                |
+
+### Tradeoffs
+
+* Higher frontend complexity than Streamlit
+* Better scalability and UX flexibility
+
+---
+
+# Backend
+
+| Technology       | Purpose       | Reasoning                   |
+| ---------------- | ------------- | --------------------------- |
+| FastAPI          | API framework | High-performance async APIs |
+| Python 3.11      | Runtime       | Strong ecosystem            |
+| Uvicorn/Gunicorn | ASGI serving  | Production-grade serving    |
+
+### API Standard
+
+* RESTful JSON APIs
+* Async request handling
+
+---
+
+# Database
+
+| Technology    | Purpose           | Reasoning                    |
+| ------------- | ----------------- | ---------------------------- |
+| PostgreSQL    | Primary datastore | ACID compliance              |
+| Redis         | Cache & queues    | Fast in-memory operations    |
+| Elasticsearch | Search indexing   | Full-text search scalability |
+
+### Tradeoffs
+
+* Elasticsearch operational complexity
+* Redis persistence limitations
+
+---
+
+# Infrastructure
+
+| Technology          | Purpose          |
+| ------------------- | ---------------- |
+| AWS / DigitalOcean  | Cloud hosting    |
+| Docker              | Containerization |
+| Kubernetes (future) | Orchestration    |
+| Nginx               | Reverse proxy    |
+| Cloudflare          | CDN & protection |
+
+---
+
+# DevOps & Monitoring
+
+| Technology     | Purpose             |
+| -------------- | ------------------- |
+| GitHub Actions | CI/CD               |
+| Prometheus     | Metrics             |
+| Grafana        | Monitoring          |
+| Sentry         | Error tracking      |
+| Loki/ELK       | Centralized logging |
+
+---
+
+# 4. Functional Technical Requirements
+
+# Authentication Module
+
+## Responsibilities
+
+* User authentication
+* Token issuance
+* Session validation
+* Access control
+
+## Requirements
+
+| Requirement       | Expectation    |
+| ----------------- | -------------- |
+| Authentication    | JWT-based      |
+| Password Security | bcrypt hashing |
+| Session Expiry    | Configurable   |
+| MFA Support       | Future-ready   |
+
+---
+
+# Scraper Engine
+
+## Responsibilities
+
+* Fetch tender pages
+* Extract structured data
+* Handle retries
+* Detect duplicates
+
+## Processing Expectations
+
+* Async scraping support
+* Retry with exponential backoff
+* User-agent rotation
+* Rate limiting
+
+---
+
+# Search Engine
+
+## Responsibilities
+
+* Full-text indexing
+* Keyword ranking
+* Fast filtering
+
+## Requirements
+
+* Low-latency query handling
+* Typo tolerance
+* Pagination support
+
+---
+
+# Analytics Engine
+
+## Responsibilities
+
+* Aggregation queries
+* Trend calculations
+* Reporting metrics
+
+## Requirements
+
+* Scheduled computation jobs
+* Cached analytical results
+* Read-optimized querying
+
+---
+
+# Background Workers
+
+## Responsibilities
+
+* Queue processing
+* ETL jobs
+* Search indexing
+* Scheduled tasks
+
+## Failure Handling
+
+* Retry logic
+* Dead-letter queue support
+* Idempotent job execution
+
+---
+
+# 5. Non-Functional Requirements (NFRs)
+
+# Scalability
+
+| Requirement        | Expectation         |
+| ------------------ | ------------------- |
+| Concurrent Users   | 5,000+ initially    |
+| Horizontal Scaling | Stateless APIs      |
+| Queue Scaling      | Distributed workers |
+
+---
+
+# Performance
+
+| Requirement    | Target         |
+| -------------- | -------------- |
+| API Latency    | <300ms average |
+| Search Queries | <500ms         |
+| Dashboard Load | <2s            |
+
+---
+
+# Reliability
+
+| Requirement       | Expectation     |
+| ----------------- | --------------- |
+| Uptime            | 99.9%           |
+| Automatic Retries | Required        |
+| DB Backups        | Daily snapshots |
+
+---
+
+# Availability
+
+| Requirement       | Expectation            |
+| ----------------- | ---------------------- |
+| Disaster Recovery | Multi-backup strategy  |
+| Redundancy        | Failover-capable infra |
+| Queue Recovery    | Persistent queues      |
+
+---
+
+# Maintainability
+
+| Requirement       | Expectation      |
+| ----------------- | ---------------- |
+| Modular Codebase  | Mandatory        |
+| API Documentation | OpenAPI/Swagger  |
+| Service Isolation | Clear boundaries |
+
+---
+
+# Extensibility
+
+System must support:
+
+* Additional tender portals
+* AI classification modules
+* Notification systems
+* Mobile applications
+* Third-party integrations
+
+---
+
+# 6. Security Requirements
+
+| Area                | Requirement               |
+| ------------------- | ------------------------- |
+| Authentication      | JWT/OAuth2                |
+| Authorization       | Role-based access         |
+| Encryption          | TLS everywhere            |
+| Secrets             | Environment-based storage |
+| Input Validation    | Mandatory                 |
+| API Security        | Rate limiting             |
+| Logging             | Audit trails              |
+| Dependency Security | Vulnerability scanning    |
+
+---
+
+## OWASP Considerations
+
+Protection against:
+
+* SQL injection
+* XSS
+* CSRF
+* SSRF
+* Broken authentication
+* Rate abuse
+
+---
+
+# 7. API Requirements
+
+| Requirement        | Expectation            |
+| ------------------ | ---------------------- |
+| Architecture Style | REST                   |
+| Versioning         | /v1/ APIs              |
+| Authentication     | Bearer JWT             |
+| Response Format    | JSON                   |
+| Pagination         | Cursor/Page-based      |
+| Error Standards    | Structured JSON errors |
+
+---
+
+## API Error Example
+
+```json id="7rn3m0"
+{
+  "error": {
+    "code": "INVALID_REQUEST",
+    "message": "Invalid query parameter"
+  }
+}
+```
+
+---
+
+# 8. Data Management Requirements
+
+## Data Storage Strategy
+
+| Data Type              | Storage       |
+| ---------------------- | ------------- |
+| Structured Tender Data | PostgreSQL    |
+| Search Indexes         | Elasticsearch |
+| Cache Data             | Redis         |
+
+---
+
+## Data Lifecycle
+
+| Stage           | Action               |
+| --------------- | -------------------- |
+| Active Data     | Fast-access storage  |
+| Historical Data | Archived partitions  |
+| Expired Data    | Cold storage/removal |
+
+---
+
+## Data Requirements
+
+* Deduplication mandatory
+* Referential consistency required
+* Schema migration support required
+* Backup retention policies mandatory
+
+---
+
+# 9. Integration Requirements
+
+| Integration        | Purpose          |
+| ------------------ | ---------------- |
+| Government Portals | Tender ingestion |
+| Supabase Auth      | Authentication   |
+| Elasticsearch      | Search           |
+| Redis              | Queue/caching    |
+| Cloudflare         | CDN/security     |
+
+---
+
+## Failure Handling
+
+| Scenario             | Handling             |
+| -------------------- | -------------------- |
+| Portal downtime      | Retry & log          |
+| Queue failure        | Retry mechanism      |
+| Search index lag     | Deferred sync        |
+| Auth provider outage | Graceful degradation |
+
+---
+
+# 10. DevOps & Deployment Requirements
+
+# Environment Separation
+
+| Environment | Purpose                   |
+| ----------- | ------------------------- |
+| Development | Local engineering         |
+| Staging     | Pre-production validation |
+| Production  | Live workloads            |
+
+---
+
+# Deployment Expectations
+
+| Area                  | Requirement        |
+| --------------------- | ------------------ |
+| CI/CD                 | Automated          |
+| Rollback              | Supported          |
+| Blue-Green Deployment | Preferred          |
+| Config Management     | Environment-driven |
+
+---
+
+# Infrastructure Expectations
+
+* Containerized workloads
+* Centralized logging
+* Health-check endpoints
+* Auto-restart policies
+* Infrastructure monitoring
+
+---
+
+# 11. Logging & Monitoring Requirements
+
+# Logging Standards
+
+| Requirement             | Expectation |
+| ----------------------- | ----------- |
+| Structured Logs         | JSON format |
+| Correlation IDs         | Required    |
+| Audit Logs              | Mandatory   |
+| Centralized Aggregation | Required    |
+
+---
+
+# Monitoring
+
+| Area            | Requirement |
+| --------------- | ----------- |
+| API Metrics     | Required    |
+| Queue Metrics   | Required    |
+| DB Metrics      | Required    |
+| Scraper Metrics | Required    |
+
+---
+
+# Alerting
+
+Alerts required for:
+
+* scraper failures
+* high API latency
+* queue backlog
+* DB resource exhaustion
+* failed deployments
+
+---
+
+# 12. Testing Requirements
+
+| Testing Type        | Expectation |
+| ------------------- | ----------- |
+| Unit Testing        | Mandatory   |
+| Integration Testing | Mandatory   |
+| E2E Testing         | Required    |
+| Load Testing        | Required    |
+| Security Testing    | Required    |
+| Regression Testing  | Automated   |
+
+---
+
+## Coverage Expectations
+
+* Critical business logic coverage >80%
+* API integration coverage mandatory
+* Background worker testing required
+
+---
+
+# 13. Technical Risks & Challenges
+
+| Risk              | Description                           |
+| ----------------- | ------------------------------------- |
+| Scraper Fragility | Government portals may change layouts |
+| Rate Limiting     | External sites may throttle requests  |
+| Search Scaling    | Elasticsearch cluster growth          |
+| Queue Backlogs    | Large ingestion spikes                |
+| Vendor Lock-In    | Cloud provider dependency             |
+| Data Consistency  | Duplicate tenders                     |
+| Infra Complexity  | Multi-service orchestration           |
+
+---
+
+# 14. Future Technical Considerations
+
+## Potential Future Enhancements
+
+| Area            | Future Scope                   |
+| --------------- | ------------------------------ |
+| AI/ML           | Tender recommendation engine   |
+| NLP             | Semantic tender classification |
+| Multi-Region    | Cross-region deployments       |
+| Mobile          | Native/mobile APIs             |
+| Event Streaming | Kafka-based ingestion          |
+| Microservices   | Service decomposition          |
+
+---
+
+# 15. Technical Summary
+
+TenderTracker is designed as a scalable procurement intelligence platform focused on automated public data ingestion, distributed processing, search optimization, and analytics delivery.
+
+The engineering vision emphasizes:
+
+* production-grade reliability
+* scalable cloud-native architecture
+* maintainable modular systems
+* secure API-first design
+* extensible analytics infrastructure
+
+The platform should be engineered to support long-term operational scalability, future service decomposition, and advanced analytics capabilities while maintaining strong observability, security, and deployment discipline.
